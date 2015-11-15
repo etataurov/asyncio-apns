@@ -28,9 +28,15 @@ def _apns_pack_frame(token_hex, payload, identifier, expiration, priority):
 
     return frame
 
+@asyncio.coroutine
+def connect(cert_file: str, key_file: str, *, sandbox=False, loop=None):
+    client = ApnsClient(cert_file, key_file, sandbox=sandbox, loop=loop)
+    yield from client.connect()
+    return client
+
 
 class ApnsClient:
-    def __init__(self, cert_file: str, key_file: str, sandbox=False, loop=None):
+    def __init__(self, cert_file: str, key_file: str, *, sandbox=False, loop=None):
         self.cert_file = cert_file
         self.key_file = key_file
         self.sandbox = sandbox
@@ -44,7 +50,7 @@ class ApnsClient:
         context.load_cert_chain(self.cert_file, self.key_file)
         reader, writer = yield from asyncio.open_connection(
             host, SERVER_PORT, ssl=context, loop=self._loop)
-        self._connection = Connection(reader, writer, self._loop)
+        self._connection = Connection(reader, writer, loop=self._loop)
 
     @asyncio.coroutine
     def send_message(self, message: str, token: str):
@@ -61,7 +67,7 @@ class ApnsClient:
 
 
 class Connection:
-    def __init__(self, reader, writer, loop=None):
+    def __init__(self, reader, writer, *, loop=None):
         self.reader = reader
         self.writer = writer
         self._loop = loop
