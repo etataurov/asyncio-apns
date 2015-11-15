@@ -48,7 +48,7 @@ class ApnsClient:
 
     @asyncio.coroutine
     def send_message(self, message: str, token: str):
-        if self._connection is None or self._connection.closed():
+        if self._connection is None or self._connection.closed:
             yield from self.connect()
         data = dict(aps={'alert': message})
         payload = json.dumps(data).encode()
