@@ -61,7 +61,7 @@ class ApnsDisconnectError(Exception):
 
 
 class ErrorWaiter:
-    def __init__(self, connection, loop=None):
+    def __init__(self, connection, *, loop=None):
         self._connection = connection
         self.waiters = OrderedDict()
         self._loop = loop
