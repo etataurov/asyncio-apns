@@ -14,7 +14,7 @@ def test_waiter_ok(event_loop):
     conn.read_by_format.side_effect = lambda _: read_future
     waiter.start_waiting()
     try:
-        res = yield from waiter.expect(1, timeout=1)
+        res = yield from waiter.expect(1, timeout=0)
     finally:
         waiter.stop()
 
