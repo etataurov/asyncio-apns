@@ -4,4 +4,4 @@ python:
 install:
     - "pip install -r requirements-test.txt"
     - "pip install -e ."
-script: "pytest -v"
+script: "py.test -v"
