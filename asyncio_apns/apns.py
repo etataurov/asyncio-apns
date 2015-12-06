@@ -4,9 +4,11 @@ import ssl
 import struct
 from binascii import unhexlify
 from collections import OrderedDict
+from typing import Union
 
 from .connection import Connection
 from .errors import ApnsError, ApnsDisconnectError
+from .payload import Payload
 
 PRODUCTION_SERVER_ADDR = 'gateway.push.apple.com'
 SANDBOX_SERVER_ADDR = 'gateway.sandbox.push.apple.com'
@@ -131,15 +133,19 @@ class ApnsClient:
         self._waiter = None
 
     @asyncio.coroutine
-    def send_message(self, message: str, token: str, *, message_id=None):
+    def send_message(self, message: Union[Payload, str], token: str, *,
+                     message_id=None, priority=10):
         if self._connection is None or self._connection.closed:
             yield from self.connect()
-        data = dict(aps={'alert': message})
-        payload = json.dumps(data).encode()
+        if isinstance(message, Payload):
+            payload = message
+        else:
+            payload = Payload(alert=message)
+        data = json.dumps(payload.as_dict()).encode()
         if message_id is None:
             message_id = self._next_message_id
             self._next_message_id += 1
-        frame = _apns_pack_frame(token, payload, message_id, 0, 10)
+        frame = _apns_pack_frame(token, data, message_id, 0, priority)
         self._connection.write(frame)
         try:
             yield from self._connection.drain()
