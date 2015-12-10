@@ -123,7 +123,7 @@ class ApnsClient:
         reader, writer = yield from asyncio.open_connection(
             host, SERVER_PORT, ssl=context, loop=self._loop)
         self._connection = Connection(reader, writer, loop=self._loop)
-        self._waiter = ErrorWaiter(self._connection, self._loop)
+        self._waiter = ErrorWaiter(self._connection, loop=self._loop)
         self._waiter.start_waiting()
 
     def disconnect(self):

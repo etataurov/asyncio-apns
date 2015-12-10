@@ -15,7 +15,6 @@ class Payload:
         self.content_available = content_available
         self.category = category
         self.custom = custom
-        # TODO: priority
 
     def as_dict(self):
         result = dict(aps={})
