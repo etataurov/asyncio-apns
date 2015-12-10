@@ -33,10 +33,12 @@ def test_payload_with_content_available():
     aps_d = p.as_dict()['aps']
     assert aps_d['content-available'] == 1
 
+
 def test_payload_no_content_available():
     p = Payload(content_available=False)
     aps_d = p.as_dict()['aps']
     assert 'content-available' not in aps_d
+
 
 def test_payload_with_category():
     p = Payload(category='some')
