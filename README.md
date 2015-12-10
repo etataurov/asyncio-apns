@@ -1,5 +1,9 @@
 # asyncio-apns
 
+[![Build Status](https://travis-ci.org/etataurov/asyncio-apns.svg?branch=develop)](https://travis-ci.org/etataurov/asyncio-apns)
+
+asyncio client for Apple Push Notification Service
+
 Work in progress
 
 ## Usage
