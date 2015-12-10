@@ -1,38 +1,17 @@
 import asyncio
 import json
 import ssl
-import struct
-from binascii import unhexlify
 from collections import OrderedDict
 from typing import Union
 
 from .connection import Connection
 from .errors import ApnsError, ApnsDisconnectError
 from .payload import Payload
+from .apns_protocol import ERROR_FORMAT, pack_frame
 
 PRODUCTION_SERVER_ADDR = 'gateway.push.apple.com'
 SANDBOX_SERVER_ADDR = 'gateway.sandbox.push.apple.com'
 SERVER_PORT = 2195
-
-
-def _apns_pack_frame(token_hex, payload, identifier, expiration, priority):
-    """
-    copy-paste from https://github.com/jleclanche/django-push-notifications/blob/master/push_notifications/apns.py
-    """
-    token = unhexlify(token_hex)
-    # |COMMAND|FRAME-LEN|{token}|{payload}|{id:4}|{expiration:4}|{priority:1}
-    frame_len = 3 * 5 + len(token) + len(payload) + 4 + 4 + 1  # 5 items, each 3 bytes prefix, then each item length
-    frame_fmt = "!BIBH%ssBH%ssBHIBHIBHB" % (len(token), len(payload))
-    frame = struct.pack(
-        frame_fmt,
-        2, frame_len,
-        1, len(token), token,
-        2, len(payload), payload,
-        3, 4, identifier,
-        4, 4, expiration,
-        5, 1, priority)
-
-    return frame
 
 
 @asyncio.coroutine
@@ -59,8 +38,7 @@ class ErrorWaiter:
 
     @asyncio.coroutine
     def read(self):
-        error_format = "!BBI"
-        data = yield from self._connection.read_by_format(error_format)
+        data = yield from self._connection.read_by_format(ERROR_FORMAT)
         if data is not None:
             command, status, identifier = data
             self.handle_error(identifier, status)
@@ -145,7 +123,7 @@ class ApnsClient:
         if message_id is None:
             message_id = self._next_message_id
             self._next_message_id += 1
-        frame = _apns_pack_frame(token, data, message_id, 0, priority)
+        frame = pack_frame(token, data, message_id, 0, priority)
         self._connection.write(frame)
         try:
             yield from self._connection.drain()

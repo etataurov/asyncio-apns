@@ -1,6 +1,6 @@
 import asyncio
 
-from .apns import ApnsClient
+from .client import ApnsClient
 from .errors import ApnsDisconnectError, ApnsError
 
 

@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from asyncio_apns.errors import ApnsError
-from asyncio_apns.apns import ErrorWaiter
+from asyncio_apns.client import ErrorWaiter
 
 
 @pytest.mark.asyncio
