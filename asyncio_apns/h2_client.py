@@ -28,8 +28,8 @@ class DisconnectError(Exception):
 
 
 class H2ClientProtocol(asyncio.Protocol):
-    def __init__(self):
-        self.conn = H2Connection()
+    def __init__(self, connection=H2Connection()):
+        self.conn = connection
         self.response_futures = collections.deque()
         self.events_queue = collections.defaultdict(collections.deque)  # stream_id -> deque
         self.transport = None
