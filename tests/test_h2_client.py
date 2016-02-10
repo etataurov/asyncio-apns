@@ -54,3 +54,28 @@ def test_future_exception():
     assert future.exception().code == 404
 
 
+def test_future_exception_on_disconnect():
+    conn = mock.MagicMock()
+    protocol = H2ClientProtocol(conn)
+    transport = mock.MagicMock()
+    protocol.connection_made(transport)
+
+    future = protocol.send_request([])
+    conn.receive_data.return_value = [ConnectionTerminated()]
+    protocol.data_received(b'some_data')
+
+    with pytest.raises(DisconnectError):
+        future.result()
+
+
+def test_future_on_connection_lost():
+    conn = mock.MagicMock()
+    protocol = H2ClientProtocol(conn)
+    transport = mock.MagicMock()
+    protocol.connection_made(transport)
+
+    future = protocol.send_request([])
+    protocol.connection_lost(Exception())
+
+    with pytest.raises(DisconnectError):
+        future.result()

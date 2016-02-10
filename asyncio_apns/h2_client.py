@@ -54,7 +54,7 @@ class H2ClientProtocol(asyncio.Protocol):
         self.transport.write(self.conn.data_to_send())
 
     def connection_lost(self, exc):
-        pass
+        self.on_terminated(None, None)
 
     def data_received(self, data):
         events = self.conn.receive_data(data)
