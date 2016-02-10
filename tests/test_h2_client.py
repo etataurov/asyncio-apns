@@ -10,6 +10,15 @@ def test_init():
     assert protocol.conn is conn
 
 
+def test_connected():
+    protocol = H2ClientProtocol()
+    assert not protocol.connected
+    protocol.connection_made(mock.MagicMock())
+    assert protocol.connected
+    protocol.connection_lost(Exception())
+    assert not protocol.connected
+
+
 def test_connection_made():
     conn = mock.MagicMock()
     protocol = H2ClientProtocol(conn)

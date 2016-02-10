@@ -34,6 +34,10 @@ class H2ClientProtocol(asyncio.Protocol):
         self.events_queue = collections.defaultdict(collections.deque)  # stream_id -> deque
         self.transport = None
 
+    @property
+    def connected(self):
+        return self.transport is not None
+
     @classmethod
     @asyncio.coroutine
     def connect(cls, host: str, port: int,
@@ -55,6 +59,7 @@ class H2ClientProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         self.on_terminated(None, None)
+        self.transport = None
 
     def data_received(self, data):
         events = self.conn.receive_data(data)
