@@ -7,6 +7,6 @@ install:
     - "pip install python-coveralls"
     - "pip install -e ."
 script:
-    - "py.test -v"
+    - "py.test -v --cov=asyncio_apns"
 after_success:
     - "coveralls"
