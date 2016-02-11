@@ -1,7 +1,12 @@
 language: python
 python:
+    - "3.4"
     - "3.5"
 install:
     - "pip install -r requirements-test.txt"
+    - "pip install python-coveralls"
     - "pip install -e ."
-script: "py.test -v"
+script:
+    - "py.test -v"
+after_success:
+    - "coveralls"
