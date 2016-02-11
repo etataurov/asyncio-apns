@@ -1,6 +1,7 @@
 # asyncio-apns
 
 [![Build Status](https://travis-ci.org/etataurov/asyncio-apns.svg?branch=develop)](https://travis-ci.org/etataurov/asyncio-apns)
+[![Coverage Status](https://coveralls.io/repos/github/etataurov/asyncio-apns/badge.svg?branch=develop)](https://coveralls.io/github/etataurov/asyncio-apns?branch=develop)
 
 asyncio client for Apple Push Notification Service
 
