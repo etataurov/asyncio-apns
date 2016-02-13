@@ -4,10 +4,8 @@ import ssl
 from collections import OrderedDict
 from typing import Union
 
-from .connection import Connection
 from .errors import ApnsError, ApnsDisconnectError
 from .payload import Payload
-from .apns_protocol import ERROR_FORMAT, pack_frame
 
 PRODUCTION_SERVER_ADDR = 'gateway.push.apple.com'
 SANDBOX_SERVER_ADDR = 'gateway.sandbox.push.apple.com'
