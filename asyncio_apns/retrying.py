@@ -1,7 +1,7 @@
 import asyncio
 
 from .apns_connection import APNsConnection
-from .errors import ApnsDisconnectError
+from .errors import APNsDisconnectError
 
 
 class RetryingProxy:
@@ -18,6 +18,6 @@ class RetryingProxy:
             try:
                 yield from self.client.send_message(*args, **kwargs)
                 break
-            except ApnsDisconnectError:
+            except APNsDisconnectError:
                 yield from self._loop.sleep(resend_timeout)
                 resend_timeout *= 2

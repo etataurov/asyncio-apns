@@ -2,7 +2,7 @@ import asyncio
 from unittest import mock
 import pytest
 
-from asyncio_apns.errors import ApnsError, ApnsDisconnectError
+from asyncio_apns.errors import APNsError, APNsDisconnectError
 from asyncio_apns.retrying import RetryingProxy
 
 
@@ -29,11 +29,11 @@ def test_retrying_with_error(event_loop):
     message_id = 1
     kwargs = dict(message_id=message_id)
     res = proxy.send_message(*args, **kwargs)
-    exception = ApnsError(2, message_id)
+    exception = APNsError(2, message_id)
     future.set_exception(exception)
-    with pytest.raises(ApnsError) as excinfo:
+    with pytest.raises(APNsError) as excinfo:
         yield from res
     assert excinfo.value is exception
     client.send_message.assert_called_once_with(*args, **kwargs)
 
-# TODO test ApnsDisconnectError
+# TODO test APNsDisconnectError

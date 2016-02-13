@@ -1,6 +1,6 @@
 import asyncio
 import json
-from .errors import ApnsError, ApnsDisconnectError
+from .errors import APNsError, APNsDisconnectError
 from .h2_client import H2ClientProtocol, HTTP2Error, HTTPMethod, DisconnectError
 
 
@@ -55,10 +55,10 @@ class APNsConnection:
             reason = None
             if error_data is not None:
                 reason = error_data.get("reason")
-            raise ApnsError(reason, _get_apns_id(exc.headers))
+            raise APNsError(reason, _get_apns_id(exc.headers))
         except DisconnectError as exc:
             error_data = exc.json_data()
             reason = None
             if error_data is not None:
                 reason = error_data.get("reason")
-            raise ApnsDisconnectError(reason, _get_apns_id(exc.headers))
+            raise APNsDisconnectError(reason, _get_apns_id(exc.headers))
