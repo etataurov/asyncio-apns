@@ -25,11 +25,11 @@ class ErrorWaiter:
     def __init__(self, connection, *, loop=None):
         self._connection = connection
         self.waiters = OrderedDict()
-        self._loop = loop
+        self._loop = loop or asyncio.get_event_loop()
         self._read_future = None
 
     def start_waiting(self):
-        self._read_future = asyncio.ensure_future(self.read())
+        self._read_future = self._loop.create_task(self.read())
 
     def stop(self):
         if self._read_future:
@@ -77,8 +77,7 @@ class ErrorWaiter:
 
     def expect(self, message_id, timeout=5):
         f = asyncio.Future(loop=self._loop)
-        loop = self._loop or asyncio.get_event_loop()
-        handle = loop.call_later(timeout, self.succeed, message_id)
+        handle = self._loop.call_later(timeout, self.succeed, message_id)
         self.waiters[message_id] = (f, handle)
         return f
 
