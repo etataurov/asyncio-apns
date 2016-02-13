@@ -61,4 +61,4 @@ class APNsConnection:
             reason = None
             if error_data is not None:
                 reason = error_data.get("reason")
-            raise APNsDisconnectError(reason, _get_apns_id(exc.headers))
+            raise APNsDisconnectError(reason)

@@ -14,7 +14,6 @@ class APNsError(Exception):
 
 
 class APNsDisconnectError(Exception):
-    def __init__(self, reason, identifier):
+    def __init__(self, reason):
         super().__init__()
         self.reason = reason
-        self.identifier = identifier
