@@ -2,6 +2,7 @@ import asyncio
 import enum
 import ssl
 import collections
+import json
 from urllib.parse import urlsplit
 
 from h2.connection import H2Connection
@@ -20,11 +21,19 @@ class HTTP2Error(Exception):
         self.headers = headers
         self.data = data
 
+    def json_data(self):
+        if self.data is not None:
+            return json.loads(self.data.decode())
+
 
 class DisconnectError(Exception):
     def __init__(self, code, data=None):
         self.code = code
         self.data = data
+
+    def json_data(self):
+        if self.data is not None:
+            return json.loads(self.data.decode)
 
 
 class H2ClientProtocol(asyncio.Protocol):

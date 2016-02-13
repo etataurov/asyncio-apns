@@ -12,10 +12,9 @@ class ApnsError(Exception):
         # TODO description from Apple
         return "ApnsError({})".format(self.status)
 
-    def message_was_sent(self):
-        # 10 - shutdown
-        return self.status == 10
-
 
 class ApnsDisconnectError(Exception):
-    pass
+    def __init__(self, reason, identifier):
+        super().__init__()
+        self.reason = reason
+        self.identifier = identifier
