@@ -34,6 +34,10 @@ class APNsConnection:
                 host, 443, cert_file=self.cert_file,
                 key_file=self.key_file, loop=self._loop)
 
+    def disconnect(self):
+        self.protocol.disconnect()
+        self.protocol = None
+
     def _prepare_request(self, payload, token):
         data = json.dumps(payload.as_dict()).encode()
         request_headers = [

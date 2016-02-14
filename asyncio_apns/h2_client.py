@@ -61,6 +61,9 @@ class H2ClientProtocol(asyncio.Protocol):
         _, protocol = yield from loop.create_connection(H2ClientProtocol, host=host, port=port, ssl=ssl_context)
         return protocol
 
+    def disconnect(self):
+        self.transport.close()
+
     def connection_made(self, transport):
         self.transport = transport
         self.conn.initiate_connection()
