@@ -33,7 +33,7 @@ class DisconnectError(Exception):
 
     def json_data(self):
         if self.data is not None:
-            return json.loads(self.data.decode)
+            return json.loads(self.data.decode())
 
 
 class H2ClientProtocol(asyncio.Protocol):

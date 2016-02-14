@@ -46,7 +46,7 @@ class APNsConnection:
 
     @asyncio.coroutine
     def send_message(self, payload, token):
-        headers, data = self._prepare_request(token, payload)
+        headers, data = self._prepare_request(payload, token)
         try:
             headers, _ = yield from self.protocol.send_request(headers, data)
             return _get_apns_id(headers)
