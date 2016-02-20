@@ -18,7 +18,7 @@ CERT_FILE = 'path/to/cert_file'
 KEY_FILE = 'path/to/key_file'
 
 async def send_push(message, token, loop):
-    apns = await connect(CERT_FILE, KEY_FILE, sandbox=True, loop=loop)
+    apns = await connect(CERT_FILE, KEY_FILE, loop=loop)
     await apns.send_message(message, token)
     apns.disconnect()
 
