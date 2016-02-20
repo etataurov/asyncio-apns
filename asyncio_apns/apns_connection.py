@@ -28,17 +28,29 @@ class APNsConnection:
         self.key_file = key_file
         self.development = development
         self._loop = loop
+        self._connection_coro = None
 
     @property
     def connected(self):
         return self.protocol is not None and self.protocol.connected
 
     @asyncio.coroutine
-    def connect(self):
+    def _do_connect(self):
         host = DEVELOPMENT_SERVER_ADDR if self.development else PRODUCTION_SERVER_ADDR
         self.protocol = yield from H2ClientProtocol.connect(
                 host, 443, cert_file=self.cert_file,
                 key_file=self.key_file, loop=self._loop)
+
+    @asyncio.coroutine
+    def connect(self):
+        if self._connection_coro:
+            yield from self._connection_coro
+            return
+        try:
+            self._connection_coro = self._do_connect()
+            yield from self._connection_coro
+        finally:
+            self._connection_coro = None
 
     def disconnect(self):
         self.protocol.disconnect()
@@ -58,6 +70,8 @@ class APNsConnection:
 
     @asyncio.coroutine
     def send_message(self, payload: Union[Payload, str], token: str):
+        if not self.connected:
+            yield from self.connect()
         headers, data = self._prepare_request(payload, token)
         try:
             headers, _ = yield from self.protocol.send_request(headers, data)

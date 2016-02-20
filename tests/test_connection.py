@@ -40,6 +40,23 @@ def test_connect(connect):
 
 
 @pytest.mark.asyncio
+def test_disconnect(connect):
+    connection = yield from connect()
+    connection.disconnect()
+    assert not connection.connected
+
+
+@pytest.mark.asyncio
+def test_connect_twice():
+    with mock.patch("asyncio_apns.apns_connection.H2ClientProtocol") as mock_protocol:
+        mock_protocol.connect.return_value = future_with_result(mock.MagicMock())
+        connection = APNsConnection("some.crt", "some.key")
+        connection.connect()
+        yield from connection.connect()
+        assert mock_protocol.connect.call_count == 1
+
+
+@pytest.mark.asyncio
 def test_send_message(connect):
     connection = yield from connect()
     token = "abcde"
