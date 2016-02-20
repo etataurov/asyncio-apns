@@ -1,7 +1,9 @@
 import asyncio
 import json
+from typing import Union
 from .errors import APNsError, APNsDisconnectError
 from .h2_client import H2ClientProtocol, HTTP2Error, HTTPMethod, DisconnectError
+from .payload import Payload
 
 
 PRODUCTION_SERVER_ADDR = 'gateway.push.apple.com'
@@ -27,6 +29,10 @@ class APNsConnection:
         self.development = development
         self._loop = loop
 
+    @property
+    def connected(self):
+        return self.protocol is not None and self.protocol.connected
+
     @asyncio.coroutine
     def connect(self):
         host = DEVELOPMENT_SERVER_ADDR if self.development else PRODUCTION_SERVER_ADDR
@@ -38,7 +44,9 @@ class APNsConnection:
         self.protocol.disconnect()
         self.protocol = None
 
-    def _prepare_request(self, payload, token):
+    def _prepare_request(self, payload: Union[Payload, str], token: str):
+        if not isinstance(payload, Payload):
+            payload = Payload(payload)
         data = json.dumps(payload.as_dict()).encode()
         request_headers = [
             (':method', HTTPMethod.POST.value),
@@ -49,7 +57,7 @@ class APNsConnection:
         return request_headers, data
 
     @asyncio.coroutine
-    def send_message(self, payload, token):
+    def send_message(self, payload: Union[Payload, str], token: str):
         headers, data = self._prepare_request(payload, token)
         try:
             headers, _ = yield from self.protocol.send_request(headers, data)
