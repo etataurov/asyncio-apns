@@ -1,4 +1,3 @@
 pytest==2.8.7
 pytest-asyncio==0.3.0
 pytest-cov==2.2.1
--e git+https://github.com/python-hyper/hyper-h2@2d41ef196c686f0b1895eb0cfa220082cb2c07f1#egg=h2

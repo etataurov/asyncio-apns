@@ -1,10 +1,10 @@
 import sys
 from distutils.core import setup
 
+install_requires = ["h2>=2.1.2"]
 if sys.version_info < (3, 5):
-    install_requires = ["typing"]
-else:
-    install_requires = []
+    install_requires.append("typing")
+
 
 setup(
     name='asyncio-apns',
