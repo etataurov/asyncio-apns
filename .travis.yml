@@ -5,7 +5,7 @@ python:
 install:
     - "pip install -r requirements-test.txt"
     - "pip install python-coveralls"
-    - "pip install -e ."
+    - "pip install --process-dependency-links -e ."
 script:
     - "py.test -v --cov=asyncio_apns"
 after_success:
