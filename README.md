@@ -7,6 +7,13 @@ asyncio client for Apple Push Notification Service
 
 Work in progress
 
+## Installation
+```
+git clone https://github.com/etataurov/asyncio-apns
+cd asyncio-apns
+pip install --process-dependency-links -e .
+```
+
 ## Usage
 
 ```python
