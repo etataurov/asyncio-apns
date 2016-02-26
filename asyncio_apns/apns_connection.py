@@ -6,8 +6,8 @@ from .h2_client import H2ClientProtocol, HTTP2Error, HTTPMethod, DisconnectError
 from .payload import Payload
 
 
-PRODUCTION_SERVER_ADDR = 'gateway.push.apple.com'
-DEVELOPMENT_SERVER_ADDR = "api.push.apple.com"
+PRODUCTION_SERVER_ADDR = "api.push.apple.com"
+DEVELOPMENT_SERVER_ADDR = "api.development.push.apple.com"
 
 
 @asyncio.coroutine
