@@ -102,6 +102,9 @@ class H2ClientProtocol(asyncio.Protocol):
         if body is not None:
             self.conn.send_data(stream_id, body)
         self.conn.end_stream(stream_id)
+
+        self.transport.write(self.conn.data_to_send())
+
         future = asyncio.Future(loop=self.loop)
         self.response_futures.append(future)
         return future
