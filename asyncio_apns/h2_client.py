@@ -42,6 +42,7 @@ class H2ClientProtocol(asyncio.Protocol):
         self.response_futures = collections.deque()
         self.events_queue = collections.defaultdict(collections.deque)  # stream_id -> deque
         self.transport = None
+        self.loop = None
 
     @property
     def connected(self):
@@ -59,6 +60,7 @@ class H2ClientProtocol(asyncio.Protocol):
             ssl_context.load_cert_chain(cert_file, key_file)
         # waiting for successful connect
         _, protocol = yield from loop.create_connection(H2ClientProtocol, host=host, port=port, ssl=ssl_context)
+        protocol.loop = loop
         return protocol
 
     def disconnect(self):
@@ -100,7 +102,7 @@ class H2ClientProtocol(asyncio.Protocol):
         if body is not None:
             self.conn.send_data(stream_id, body)
         self.conn.end_stream(stream_id)
-        future = asyncio.Future()
+        future = asyncio.Future(loop=self.loop)
         self.response_futures.append(future)
         return future
 
