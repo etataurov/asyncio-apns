@@ -97,7 +97,7 @@ class H2ClientProtocol(asyncio.Protocol):
             f.set_exception(DisconnectError(error_code, data))
 
     def send_request(self, headers, body=None):
-        stream_id = 1
+        stream_id = self.conn.get_next_available_stream_id()
         self.conn.send_headers(stream_id, headers)
         if body is not None:
             self.conn.send_data(stream_id, body)
@@ -119,6 +119,7 @@ class H2ClientProtocol(asyncio.Protocol):
                 data_event = data
             elif isinstance(data, StreamEnded):
                 break
+        self.events_queue.pop(stream_id)
 
         headers = dict(response_event.headers)
         data = data_event.data if data_event is not None else None
