@@ -43,6 +43,8 @@ class APNsConnection:
 
     @asyncio.coroutine
     def connect(self):
+        if self.connected:
+            return
         if self._connection_coro:
             yield from self._connection_coro
             return
