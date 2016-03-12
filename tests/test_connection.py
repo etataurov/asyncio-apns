@@ -22,8 +22,6 @@ def apns_connect():
     def connector():
         mock_protocol.connect.return_value = future_with_result(mock.MagicMock())
         connection = yield from connect("some.crt", "some.key")
-        # connection = APNsConnection()
-        # yield from connection.connect()
         return connection
     yield connector
     patcher.stop()
@@ -84,3 +82,18 @@ def test_send_message(apns_connect):
     yield from connection.send_message(message, token)
     expected_request_body = json.dumps(Payload(message).as_dict()).encode()
     connection.protocol.send_request.assert_called_with(mock.ANY, expected_request_body)
+
+
+@pytest.mark.asyncio
+def test_not_connected_when_sending_message(apns_connect):
+    connection = yield from apns_connect()
+    connection.disconnect()
+    from asyncio_apns import apns_connection
+    apns_connection.H2ClientProtocol.connect.reset_mock()
+    protocol_instance = apns_connection.H2ClientProtocol.connect.return_value.result()
+    token = "abcde"
+    message = "Hello"
+    protocol_instance.send_request.return_value = future_with_result(
+        (mock.MagicMock(), mock.MagicMock()))
+    yield from connection.send_message(message, token)
+    assert apns_connection.H2ClientProtocol.connect.called
