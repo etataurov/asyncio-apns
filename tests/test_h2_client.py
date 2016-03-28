@@ -4,6 +4,18 @@ import pytest
 from asyncio_apns.h2_client import *
 
 
+@pytest.fixture
+def apns_response():
+    def make_response(stream_id=1, status=200):
+        response = ResponseReceived()
+        response.stream_id = stream_id
+        response.headers = [(":status", status)]
+        ended = StreamEnded()
+        ended.stream_id = stream_id
+        return [response, ended]
+    return make_response
+
+
 def test_init():
     conn = mock.MagicMock()
     protocol = H2ClientProtocol(conn)
@@ -30,31 +42,29 @@ def test_connection_made():
     transport.write.assert_called_once_with(data)
 
 
-def test_future_done():
+def test_future_done(apns_response):
     conn = mock.MagicMock()
     protocol = H2ClientProtocol(conn)
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
+    conn.get_next_available_stream_id.return_value = 1
     future = protocol.send_request([])
-    resp = ResponseReceived()
-    resp.headers = [(":status", 200)]
-    conn.receive_data.return_value = [resp, StreamEnded()]
+    conn.receive_data.return_value = apns_response(stream_id=1)
     protocol.data_received(b'some_data')
 
     assert future.done()
 
 
-def test_future_exception():
+def test_future_exception(apns_response):
     conn = mock.MagicMock()
     protocol = H2ClientProtocol(conn)
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
+    conn.get_next_available_stream_id.return_value = 1
     future = protocol.send_request([])
-    resp = ResponseReceived()
-    resp.headers = [(":status", 404)]
-    conn.receive_data.return_value = [resp, StreamEnded()]
+    conn.receive_data.return_value = apns_response(stream_id=1, status=404)
     protocol.data_received(b'some_data')
 
     with pytest.raises(HTTP2Error):
@@ -88,3 +98,19 @@ def test_future_on_connection_lost():
 
     with pytest.raises(DisconnectError):
         future.result()
+
+
+def test_response_order(apns_response):
+    conn = mock.MagicMock()
+    protocol = H2ClientProtocol(conn)
+    transport = mock.MagicMock()
+    protocol.connection_made(transport)
+
+    conn.get_next_available_stream_id.return_value = 1
+    future1 = protocol.send_request([])
+    conn.get_next_available_stream_id.return_value = 2
+    future2 = protocol.send_request([])
+    conn.receive_data.return_value = apns_response(stream_id=2)
+    protocol.data_received(b'some_data')
+    assert not future1.done()
+    assert future2.done()
