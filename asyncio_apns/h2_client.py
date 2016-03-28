@@ -39,7 +39,7 @@ class DisconnectError(Exception):
 class H2ClientProtocol(asyncio.Protocol):
     def __init__(self, connection=H2Connection()):
         self.conn = connection
-        self.response_futures = collections.deque()
+        self.response_futures = dict()  # stream_id -> Future
         self.events_queue = collections.defaultdict(collections.deque)  # stream_id -> deque
         self.transport = None
         self.loop = None
@@ -93,7 +93,7 @@ class H2ClientProtocol(asyncio.Protocol):
 
     def on_terminated(self, error_code, data):
         while self.response_futures:
-            f = self.response_futures.popleft()
+            _, f = self.response_futures.popitem()
             f.set_exception(DisconnectError(error_code, data))
 
     def send_request(self, headers, body=None):
@@ -106,11 +106,11 @@ class H2ClientProtocol(asyncio.Protocol):
         self.transport.write(self.conn.data_to_send())
 
         future = asyncio.Future(loop=self.loop)
-        self.response_futures.append(future)
+        self.response_futures[stream_id] = future
         return future
 
     def handle_response(self, stream_id):
-        future = self.response_futures.popleft()
+        future = self.response_futures.pop(stream_id)
         response_event = self.events_queue[stream_id].popleft()
         data_event = None
         while True:
