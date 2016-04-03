@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 from h2.connection import H2Connection, ConnectionState
 from h2.events import (ConnectionTerminated, DataReceived,
                        ResponseReceived, StreamEnded)
+from h2.exceptions import TooManyStreamsError
 
 
 class HTTPMethod(enum.Enum):
@@ -40,6 +41,7 @@ class H2ClientProtocol(asyncio.Protocol):
     def __init__(self, connection=H2Connection()):
         self.conn = connection
         self.response_futures = dict()  # stream_id -> Future
+        self.stream_waiters = collections.deque()
         self.events_queue = collections.defaultdict(collections.deque)  # stream_id -> deque
         self.transport = None
         self.loop = None
@@ -87,6 +89,7 @@ class H2ClientProtocol(asyncio.Protocol):
             elif isinstance(event, StreamEnded):
                 self.events_queue[event.stream_id].append(event)
                 self.handle_response(event.stream_id)
+                self._on_stream_closed()
             elif isinstance(event, ConnectionTerminated):
                 self.on_terminated(event.error_code, event.additional_data)
 
@@ -99,8 +102,24 @@ class H2ClientProtocol(asyncio.Protocol):
             _, f = self.response_futures.popitem()
             f.set_exception(DisconnectError(error_code, data))
 
+    def _on_stream_closed(self):
+        if self.stream_waiters:
+            future = self.stream_waiters.popleft()
+            future.set_result(None)
+
+    @asyncio.coroutine
     def send_request(self, headers, body=None):
-        stream_id = self.conn.get_next_available_stream_id()
+        while True:
+            try:
+                stream_id = self.conn.get_next_available_stream_id()
+                future = self._send_request(stream_id, headers, body)
+                return (yield from future)
+            except TooManyStreamsError:
+                wait_future = asyncio.Future(loop=self.loop)
+                self.stream_waiters.append(wait_future)
+                yield from wait_future
+
+    def _send_request(self, stream_id, headers, body):
         self.conn.send_headers(stream_id, headers)
         if body is not None:
             self.conn.send_data(stream_id, body)

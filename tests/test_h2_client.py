@@ -1,3 +1,4 @@
+import asyncio
 from unittest import mock
 import pytest
 
@@ -48,8 +49,7 @@ def test_future_done(apns_response):
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
-    conn.get_next_available_stream_id.return_value = 1
-    future = protocol.send_request([])
+    future = protocol._send_request(1, [], body=None)
     conn.receive_data.return_value = apns_response(stream_id=1)
     protocol.data_received(b'some_data')
 
@@ -63,7 +63,7 @@ def test_future_exception(apns_response):
     protocol.connection_made(transport)
 
     conn.get_next_available_stream_id.return_value = 1
-    future = protocol.send_request([])
+    future = protocol._send_request(1, [], body=None)
     conn.receive_data.return_value = apns_response(stream_id=1, status=404)
     protocol.data_received(b'some_data')
 
@@ -79,7 +79,7 @@ def test_future_exception_on_disconnect():
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
-    future = protocol.send_request([])
+    future = protocol._send_request(1, [], body=None)
     conn.receive_data.return_value = [ConnectionTerminated()]
     protocol.data_received(b'some_data')
 
@@ -93,7 +93,7 @@ def test_future_on_connection_lost():
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
-    future = protocol.send_request([])
+    future = protocol._send_request(1, [], body=None)
     protocol.connection_lost(Exception())
 
     with pytest.raises(DisconnectError):
@@ -106,10 +106,8 @@ def test_response_order(apns_response):
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
-    conn.get_next_available_stream_id.return_value = 1
-    future1 = protocol.send_request([])
-    conn.get_next_available_stream_id.return_value = 2
-    future2 = protocol.send_request([])
+    future1 = protocol._send_request(1, [], body=None)
+    future2 = protocol._send_request(2, [], body=None)
     conn.receive_data.return_value = apns_response(stream_id=2)
     protocol.data_received(b'some_data')
     assert not future1.done()
