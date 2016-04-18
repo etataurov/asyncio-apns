@@ -11,7 +11,7 @@ Work in progress
 ```
 git clone https://github.com/etataurov/asyncio-apns
 cd asyncio-apns
-pip install --process-dependency-links -e .
+pip install -e .
 ```
 
 ## Usage
