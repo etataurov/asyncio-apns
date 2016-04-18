@@ -5,7 +5,7 @@ import collections
 import json
 from urllib.parse import urlsplit
 
-from h2.connection import H2Connection
+from h2.connection import H2Connection, ConnectionState
 from h2.events import (ConnectionTerminated, DataReceived,
                        ResponseReceived, StreamEnded)
 
@@ -46,7 +46,10 @@ class H2ClientProtocol(asyncio.Protocol):
 
     @property
     def connected(self):
-        return self.transport is not None
+        return self.transport is not None and not self.connection_closed()
+
+    def connection_closed(self):
+        return self.conn.state_machine.state == ConnectionState.CLOSED
 
     @classmethod
     @asyncio.coroutine
