@@ -2,6 +2,7 @@ import asyncio
 from unittest import mock
 import pytest
 
+from h2.exceptions import TooManyStreamsError
 from asyncio_apns.h2_client import *
 
 
@@ -112,3 +113,44 @@ def test_response_order(apns_response):
     protocol.data_received(b'some_data')
     assert not future1.done()
     assert future2.done()
+
+
+@pytest.mark.asyncio
+def test_too_many_streams_handled(apns_response):
+    conn = mock.MagicMock()
+    protocol = H2ClientProtocol(conn)
+    transport = mock.MagicMock()
+    protocol.connection_made(transport)
+
+    conn.send_headers.side_effect = TooManyStreamsError
+    conn.get_next_available_stream_id.return_value = 1
+    future = asyncio.async(protocol.send_request([]))
+    yield from asyncio.sleep(0)
+    assert not future.done()
+    conn.send_headers.reset_mock()
+    conn.send_headers.side_effect = None
+    protocol._on_stream_closed()
+    yield from asyncio.sleep(0)
+    conn.receive_data.return_value = apns_response(stream_id=1)
+    protocol.data_received(b'some_data')
+    yield from asyncio.sleep(0)
+    assert future.done()
+    assert conn.send_headers.called
+
+
+@pytest.mark.asyncio
+def test_too_many_streams_on_terminated():
+    conn = mock.MagicMock()
+    protocol = H2ClientProtocol(conn)
+    transport = mock.MagicMock()
+    protocol.connection_made(transport)
+
+    conn.send_headers.side_effect = TooManyStreamsError
+    conn.get_next_available_stream_id.return_value = 1
+    future = asyncio.async(protocol.send_request([]))
+    yield from asyncio.sleep(0)
+    protocol.connection_lost(Exception())
+    yield from asyncio.sleep(0)
+
+    with pytest.raises(DisconnectError):
+        future.result()

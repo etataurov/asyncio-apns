@@ -101,6 +101,9 @@ class H2ClientProtocol(asyncio.Protocol):
         while self.response_futures:
             _, f = self.response_futures.popitem()
             f.set_exception(DisconnectError(error_code, data))
+        while self.stream_waiters:
+            f = self.stream_waiters.popleft()
+            f.set_exception(DisconnectError(error_code, data))
 
     def _on_stream_closed(self):
         if self.stream_waiters:
