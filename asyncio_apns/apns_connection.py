@@ -1,18 +1,20 @@
 import asyncio
 import json
+import enum
 from typing import Union
 from .errors import APNsError, APNsDisconnectError
 from .h2_client import H2ClientProtocol, HTTP2Error, HTTPMethod, DisconnectError
 from .payload import Payload
 
 
-PRODUCTION_SERVER_ADDR = "api.push.apple.com"
-DEVELOPMENT_SERVER_ADDR = "api.development.push.apple.com"
+class NotificationPriority(enum.Enum):
+	Immediate = 10
+	Delayed = 5
 
 
 @asyncio.coroutine
-def connect(cert_file: str, key_file: str, *, development=False, loop=None):
-    connection = APNsConnection(cert_file, key_file, development=development, loop=loop)
+def connect(cert_file: str, key_file: str, *, development=False, loop=None, production_server="api.push.apple.com", development_server="api.development.push.apple.com", port_server=443):
+    connection = APNsConnection(cert_file, key_file, development=development, loop=loop, production_server=production_server, development_server=development_server, port_server=port_server)
     yield from connection.connect()
     return connection
 
@@ -22,12 +24,15 @@ def _get_apns_id(headers: dict):
 
 
 class APNsConnection:
-    def __init__(self, cert_file: str, key_file: str, *, development=False, loop=None):
+    def __init__(self, cert_file: str, key_file: str, *, development=False, loop=None, production_server="api.push.apple.com", development_server="api.development.push.apple.com", port_server=443):
         self.protocol = None
         self.cert_file = cert_file
         self.key_file = key_file
         self.development = development
         self._loop = loop
+        self.production_server = production_server
+        self.development_server = development_server
+        self.port_server = port_server
         self._connection_coro = None
 
     @property
@@ -36,9 +41,9 @@ class APNsConnection:
 
     @asyncio.coroutine
     def _do_connect(self):
-        host = DEVELOPMENT_SERVER_ADDR if self.development else PRODUCTION_SERVER_ADDR
+        host = self.development_server if self.development else self.production_server
         self.protocol = yield from H2ClientProtocol.connect(
-                host, 443, cert_file=self.cert_file,
+                host, self.port_server, cert_file=self.cert_file,
                 key_file=self.key_file, loop=self._loop)
 
     @asyncio.coroutine
@@ -71,10 +76,13 @@ class APNsConnection:
         return request_headers, data
 
     @asyncio.coroutine
-    def send_message(self, payload: Union[Payload, str], token: str):
+    def send_message(self, payload: Union[Payload, str], token: str, prioriy=NotificationPriority.Immediate, topic=None):
         if not self.connected:
             yield from self.connect()
         headers, data = self._prepare_request(payload, token)
+        headers.append(("apns-priority", str(prioriy.value)))
+        if topic:
+            headers.append(("apns-topic", topic))
         try:
             headers, _ = yield from self.protocol.send_request(headers, data)
             return _get_apns_id(headers)

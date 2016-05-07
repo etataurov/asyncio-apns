@@ -61,6 +61,8 @@ class H2ClientProtocol(asyncio.Protocol):
             loop = asyncio.get_event_loop()
         ssl_context = ssl.create_default_context()
         ssl_context.set_alpn_protocols(["h2"])
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
         if cert_file and key_file:
             ssl_context.load_cert_chain(cert_file, key_file)
         # waiting for successful connect
