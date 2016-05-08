@@ -18,7 +18,8 @@ class NotificationPriority(enum.IntEnum):
 
 @asyncio.coroutine
 def connect(cert_file: str, key_file: str, *, development=False, loop=None):
-    connection = APNsConnection(cert_file, key_file, development=development, loop=loop)
+    server_addr = DEVELOPMENT_SERVER_ADDR if development else PRODUCTION_SERVER_ADDR
+    connection = APNsConnection(cert_file, key_file, server_addr=server_addr, loop=loop)
     yield from connection.connect()
     return connection
 
@@ -28,11 +29,13 @@ def _get_apns_id(headers: dict):
 
 
 class APNsConnection:
-    def __init__(self, cert_file: str, key_file: str, *, development=False, loop=None):
+    def __init__(self, cert_file: str, key_file: str, *, loop=None,
+                 server_addr=PRODUCTION_SERVER_ADDR, server_port=443):
         self.protocol = None
         self.cert_file = cert_file
         self.key_file = key_file
-        self.development = development
+        self.server_addr = server_addr
+        self.server_port = server_port
         self._loop = loop
         self._connection_coro = None
 
@@ -42,10 +45,10 @@ class APNsConnection:
 
     @asyncio.coroutine
     def _do_connect(self):
-        host = DEVELOPMENT_SERVER_ADDR if self.development else PRODUCTION_SERVER_ADDR
+        verify_ssl = self.server_addr in (PRODUCTION_SERVER_ADDR, DEVELOPMENT_SERVER_ADDR)
         self.protocol = yield from H2ClientProtocol.connect(
-                host, 443, cert_file=self.cert_file,
-                key_file=self.key_file, loop=self._loop)
+                self.server_addr, self.server_port, cert_file=self.cert_file,
+                key_file=self.key_file, verify_ssl=verify_ssl, loop=self._loop)
 
     @asyncio.coroutine
     def connect(self):
