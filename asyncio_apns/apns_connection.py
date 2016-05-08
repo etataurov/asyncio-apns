@@ -1,5 +1,6 @@
 import asyncio
 import json
+import enum
 from typing import Union
 from .errors import APNsError, APNsDisconnectError
 from .h2_client import H2ClientProtocol, HTTP2Error, HTTPMethod, DisconnectError
@@ -8,6 +9,11 @@ from .payload import Payload
 
 PRODUCTION_SERVER_ADDR = "api.push.apple.com"
 DEVELOPMENT_SERVER_ADDR = "api.development.push.apple.com"
+
+
+class NotificationPriority(enum.IntEnum):
+    immediate = 10
+    delayed = 5
 
 
 @asyncio.coroutine
@@ -58,7 +64,8 @@ class APNsConnection:
         self.protocol.disconnect()
         self.protocol = None
 
-    def _prepare_request(self, payload: Union[Payload, str], token: str):
+    def _prepare_request(self, payload: Union[Payload, str], token: str,
+                         priority: NotificationPriority, topic: str):
         if not isinstance(payload, Payload):
             payload = Payload(payload)
         data = json.dumps(payload.as_dict()).encode()
@@ -66,15 +73,20 @@ class APNsConnection:
             (':method', HTTPMethod.POST.value),
             (':scheme', 'https'),
             (':path', "/3/device/{}".format(token)),
-            ('content-length', str(len(data)))
+            ('content-length', str(len(data))),
+            ('apns-priority', str(priority.value))
         ]
+        if topic:
+            request_headers.append(('apns-topic', topic))
         return request_headers, data
 
     @asyncio.coroutine
-    def send_message(self, payload: Union[Payload, str], token: str):
+    def send_message(self, payload: Union[Payload, str], token: str,
+                     priority: NotificationPriority = NotificationPriority.immediate,
+                     topic: str=None):
         if not self.connected:
             yield from self.connect()
-        headers, data = self._prepare_request(payload, token)
+        headers, data = self._prepare_request(payload, token, priority, topic)
         try:
             headers, _ = yield from self.protocol.send_request(headers, data)
             return _get_apns_id(headers)
