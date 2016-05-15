@@ -52,13 +52,17 @@ def test_connect_twice():
         mock_protocol.connect.return_value = future
         connection = APNsConnection("some.crt", "some.key")
         # scheduling first
-        asyncio.async(connection.connect())
+        first = asyncio.async(connection.connect())
         yield from asyncio.sleep(0)
         assert connection._connection_coro is not None
         # creating second
-        result = connection.connect()
+        second = asyncio.async(connection.connect())
+        yield from asyncio.sleep(0)
         future.set_result(mock.MagicMock())
-        yield from result
+        yield from second
+
+        first.result()
+        second.result()
         assert mock_protocol.connect.call_count == 1
 
 

@@ -58,7 +58,7 @@ class APNsConnection:
             yield from self._connection_coro
             return
         try:
-            self._connection_coro = self._do_connect()
+            self._connection_coro = asyncio.async(self._do_connect())
             yield from self._connection_coro
         finally:
             self._connection_coro = None
