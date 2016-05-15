@@ -1,4 +1,4 @@
-from asyncio_apns import Payload
+from asyncio_apns import Payload, PayloadAlert
 
 
 def test_payload():
@@ -63,3 +63,29 @@ def test_payload_complete():
                      'badge': 3, 'category': 'category',
                      'content-available': 1, 'alert': 'alert',
                      'sound': 'terrible'}}
+
+
+def test_payload_alert_dict():
+    alert = PayloadAlert(title="Title", body="Body")
+    d = alert.as_dict()
+    assert d['title'] == "Title"
+    assert d['body'] == "Body"
+
+
+def test_payload_alert_in_payload():
+    alert = PayloadAlert(title="Title", body="Body")
+    p = Payload(alert=alert)
+    d = p.as_dict()
+    assert d['aps']['alert'] == {'title': "Title", 'body': "Body"}
+
+
+def test_payload_alert_complete():
+    alert = PayloadAlert(title="Title", body="Body",
+                         title_localization_key="tlk", title_localization_args=["arg1", "arg2"],
+                         body_localization_key="blk", body_localization_args=["barg1", "barg2"],
+                         action_localization_key="alk", launch_image="image.png")
+    d = alert.as_dict()
+    assert d == {'title': "Title", 'body': "Body",
+                 'title-loc-key': "tlk", 'title-loc-args': ["arg1", "arg2"],
+                 'loc-key': "blk", 'loc-args': ["barg1", "barg2"],
+                 'action-loc-key': "alk", 'launch-image': "image.png"}
