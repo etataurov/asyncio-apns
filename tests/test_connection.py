@@ -14,14 +14,14 @@ def future_with_result(result):
 
 
 @pytest.yield_fixture
-def apns_connect():
+def apns_connect(event_loop):
     patcher = mock.patch("asyncio_apns.apns_connection.H2ClientProtocol")
     mock_protocol = patcher.start()
 
     @asyncio.coroutine
     def connector():
         mock_protocol.connect.return_value = future_with_result(mock.MagicMock())
-        connection = yield from connect("some.crt", "some.key")
+        connection = yield from connect("some.crt", "some.key", loop=event_loop)
         return connection
     yield connector
     patcher.stop()
@@ -46,15 +46,15 @@ def test_disconnect(apns_connect):
 
 
 @pytest.mark.asyncio
-def test_connect_twice():
+def test_connect_twice(event_loop):
     with mock.patch("asyncio_apns.apns_connection.H2ClientProtocol") as mock_protocol:
         future = asyncio.Future()
         mock_protocol.connect.return_value = future
-        connection = APNsConnection("some.crt", "some.key")
+        connection = APNsConnection("some.crt", "some.key", loop=event_loop)
         # scheduling first
         first = asyncio.async(connection.connect())
         yield from asyncio.sleep(0)
-        assert connection._connection_coro is not None
+        assert connection._connection_task is not None
         # creating second
         second = asyncio.async(connection.connect())
         yield from asyncio.sleep(0)
@@ -67,10 +67,10 @@ def test_connect_twice():
 
 
 @pytest.mark.asyncio
-def test_connect_when_connected():
+def test_connect_when_connected(event_loop):
     with mock.patch("asyncio_apns.apns_connection.H2ClientProtocol") as mock_protocol:
         mock_protocol.connect.return_value = future_with_result(mock.MagicMock())
-        connection = APNsConnection("some.crt", "some.key")
+        connection = APNsConnection("some.crt", "some.key", loop=event_loop)
         yield from connection.connect()
         yield from connection.connect()
         assert mock_protocol.connect.call_count == 1

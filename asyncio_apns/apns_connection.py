@@ -37,7 +37,7 @@ class APNsConnection:
         self.server_addr = server_addr
         self.server_port = server_port
         self._loop = loop
-        self._connection_coro = None
+        self._connection_task = None
 
     @property
     def connected(self):
@@ -54,14 +54,14 @@ class APNsConnection:
     def connect(self):
         if self.connected:
             return
-        if self._connection_coro:
-            yield from self._connection_coro
+        if self._connection_task:
+            yield from self._connection_task
             return
         try:
-            self._connection_coro = asyncio.async(self._do_connect())
-            yield from self._connection_coro
+            self._connection_task = self._loop.create_task(self._do_connect())
+            yield from self._connection_task
         finally:
-            self._connection_coro = None
+            self._connection_task = None
 
     def disconnect(self):
         self.protocol.disconnect()
