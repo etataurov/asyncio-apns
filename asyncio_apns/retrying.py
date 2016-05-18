@@ -19,5 +19,5 @@ class RetryingProxy:
                 yield from self.client.send_message(*args, **kwargs)
                 break
             except APNsDisconnectError:
-                yield from self._loop.sleep(resend_timeout)
+                yield from asyncio.sleep(resend_timeout, loop=self._loop)
                 resend_timeout *= 2
