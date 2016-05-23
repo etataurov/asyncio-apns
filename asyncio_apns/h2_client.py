@@ -16,25 +16,28 @@ class HTTPMethod(enum.Enum):
     POST = "POST"
 
 
-class HTTP2Error(Exception):
+class ExceptionJSONDataMixin:
+    data = None
+
+    def json_data(self):
+        if self.data is not None:
+            try:
+                return json.loads(self.data.decode())
+            except json.JSONDecodeError:
+                return None
+
+
+class HTTP2Error(Exception, ExceptionJSONDataMixin):
     def __init__(self, code, headers, data=None):
         self.code = code
         self.headers = headers
         self.data = data
 
-    def json_data(self):
-        if self.data is not None:
-            return json.loads(self.data.decode())
 
-
-class DisconnectError(Exception):
+class DisconnectError(Exception, ExceptionJSONDataMixin):
     def __init__(self, code, data=None):
         self.code = code
         self.data = data
-
-    def json_data(self):
-        if self.data is not None:
-            return json.loads(self.data.decode())
 
 
 class H2ClientProtocol(asyncio.Protocol):
