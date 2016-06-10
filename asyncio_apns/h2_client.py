@@ -7,7 +7,7 @@ from urllib.parse import urlsplit
 
 from h2.connection import H2Connection, ConnectionState
 from h2.events import (ConnectionTerminated, DataReceived,
-                       ResponseReceived, StreamEnded)
+                       ResponseReceived, StreamEnded, WindowUpdated)
 from h2.exceptions import TooManyStreamsError
 
 
@@ -44,6 +44,7 @@ class H2ClientProtocol(asyncio.Protocol):
     def __init__(self, connection=H2Connection()):
         self.conn = connection
         self.response_futures = dict()  # stream_id -> Future
+        self.flow_control_futures = dict()  # stream_id -> Future
         self.stream_waiters = collections.deque()
         self.events_queue = collections.defaultdict(collections.deque)  # stream_id -> deque
         self.transport = None
@@ -93,6 +94,8 @@ class H2ClientProtocol(asyncio.Protocol):
         for event in events:
             if isinstance(event, ResponseReceived) or isinstance(event, DataReceived):
                 self.events_queue[event.stream_id].append(event)
+            elif isinstance(event, WindowUpdated):
+                self.window_opened(event)
             elif isinstance(event, StreamEnded):
                 self.events_queue[event.stream_id].append(event)
                 self.handle_response(event.stream_id)
@@ -117,6 +120,21 @@ class H2ClientProtocol(asyncio.Protocol):
             future = self.stream_waiters.popleft()
             future.set_result(None)
 
+    def window_opened(self, event):
+        if event.stream_id:
+            # This is specific to a single stream.
+            if event.stream_id in self.flow_control_futures:
+                future = self.flow_control_futures.pop(event.stream_id)
+                future.set_result(None)
+        else:
+            # This event is specific to the connection. Free up *all* the
+            # streams.
+
+            for future in self.flow_control_futures.values():
+                future.set_result(None)
+
+            self.flow_control_futures = {}
+
     @asyncio.coroutine
     def send_request(self, headers, body=None):
         while True:
@@ -129,17 +147,45 @@ class H2ClientProtocol(asyncio.Protocol):
                 self.stream_waiters.append(wait_future)
                 yield from wait_future
 
+    @asyncio.coroutine
+    def _send_request_body(self, stream_id, body):
+        while True:
+            window_size = self.conn.local_flow_control_window(stream_id)
+
+            available_window = min(window_size, len(body))
+            data_to_send = body[:available_window]
+            body = body[available_window:]
+
+            chunk_size = self.conn.max_outbound_frame_size
+            chunks = (
+                data_to_send[x: x + chunk_size]
+                for x in range(0, len(data_to_send), chunk_size)
+            )
+            for chunk in chunks:
+                self.conn.send_data(stream_id, chunk)
+            self.transport.write(self.conn.data_to_send())
+
+            if body:
+                # we have data left to send
+                future = self.flow_control_futures[stream_id] = asyncio.Future(loop=self.loop)
+                yield from future
+            else:
+                break
+
+    @asyncio.coroutine
     def _send_request(self, stream_id, headers, body):
         self.conn.send_headers(stream_id, headers)
+
+        future = asyncio.Future(loop=self.loop)
+        self.response_futures[stream_id] = future
+
         if body is not None:
-            self.conn.send_data(stream_id, body)
+            yield from self._send_request_body(stream_id, body)
         self.conn.end_stream(stream_id)
 
         self.transport.write(self.conn.data_to_send())
 
-        future = asyncio.Future(loop=self.loop)
-        self.response_futures[stream_id] = future
-        return future
+        return (yield from future)
 
     def handle_response(self, stream_id):
         future = self.response_futures.pop(stream_id)
