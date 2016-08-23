@@ -74,6 +74,7 @@ class APNsConnection:
         data = json.dumps(payload.as_dict()).encode()
         request_headers = [
             (':method', HTTPMethod.POST.value),
+            (':authority', self.server_addr),
             (':scheme', 'https'),
             (':path', "/3/device/{}".format(token)),
             ('content-length', str(len(data))),
