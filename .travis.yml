@@ -2,10 +2,15 @@ sudo: required
 
 services:
   - docker
+
+env:
+  - DOCKER_PYTHON="3.4"
+  - DOCKER_PYTHON="3.5"
+
 language: python
 
 before_install:
-  - docker build -t etataurov/asyncio_apns .
+  - cat Dockerfile | sed "s/{{python_version}}/$DOCKER_PYTHON/" | docker build -t etataurov/asyncio_apns -
 
 script:
-  - docker run etataurov/asyncio_apns py.test -v tests tests_mocked_server
+  - docker run etataurov/asyncio_apns py.test -v
