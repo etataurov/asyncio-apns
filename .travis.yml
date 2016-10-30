@@ -10,7 +10,8 @@ env:
 language: python
 
 before_install:
-  - cat Dockerfile | sed "s/{{python_version}}/$DOCKER_PYTHON/" | docker build -t etataurov/asyncio_apns -
+  - sed "s/{{python_version}}/$DOCKER_PYTHON/" Dockerfile.template > Dockerfile
+  - docker build -t etataurov/asyncio_apns .
 
 script:
   - docker run etataurov/asyncio_apns py.test -v
