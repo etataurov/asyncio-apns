@@ -1,16 +1,11 @@
 sudo: required
-dist: trusty
+
+services:
+  - docker
 language: python
-python:
-    - "3.4"
-    - "3.5"
-install:
-    - "pip install -r requirements-test.txt"
-    - "pip install python-coveralls"
-    - "pip install flake8"
-    - "pip install -e ."
+
+before_install:
+  - docker build -t etataurov/asyncio_apns .
+
 script:
-    - "flake8 asyncio_apns"
-    - "py.test -v --cov=asyncio_apns"
-after_success:
-    - "coveralls"
+  - docker run etataurov/asyncio_apns py.test -v tests tests_mocked_server
