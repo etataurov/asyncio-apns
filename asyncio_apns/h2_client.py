@@ -65,7 +65,17 @@ class H2ClientProtocol(asyncio.Protocol):
         if loop is None:
             loop = asyncio.get_event_loop()
         ssl_context = ssl.create_default_context()
-        ssl_context.set_alpn_protocols(["h2"])
+        try:
+            ssl_context.set_alpn_protocols(["h2"])
+        except AttributeError:
+            # Python 3.4 doesn't have set_alpn_protocols
+            # falling back to NPN
+            pass
+        try:
+            ssl_context.set_npn_protocols(["h2"])
+        except NotImplementedError:
+            # NPN may be absent
+            pass
         if not verify_ssl:
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
