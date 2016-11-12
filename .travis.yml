@@ -4,7 +4,6 @@ services:
   - docker
 
 env:
-  - DOCKER_PYTHON="3.4"
   - DOCKER_PYTHON="3.5"
 
 language: python
