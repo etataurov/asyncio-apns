@@ -12,6 +12,12 @@ language: python
 before_install:
   - sed "s/{{python_version}}/$DOCKER_PYTHON/" Dockerfile.template > Dockerfile
   - docker build -t etataurov/asyncio_apns .
+  - pip install python-coveralls
+  - mkdir -p output
 
 script:
-  - docker run etataurov/asyncio_apns py.test -v
+  - docker run --rm etataurov/asyncio_apns flake8 asyncio_apns
+  - docker run --rm -v $(pwd)/output:/app/output etataurov/asyncio_apns /bin/sh -c "py.test tests tests_mocked_server -v --cov=asyncio_apns && cp .coverage output/"
+
+after_success:
+  - "coveralls -d output/.coverage"
