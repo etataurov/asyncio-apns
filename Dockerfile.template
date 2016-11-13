@@ -1,4 +1,5 @@
 FROM python:{{python_version}}-alpine
+RUN apk add --no-cache git
 RUN pip install --upgrade pip
 RUN pip install --upgrade setuptools
 COPY . app
