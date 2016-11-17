@@ -12,7 +12,7 @@ before_install:
   - eval "$(gimme 1.7)"
 
 install:
-  - pushd tests_mocked_server && env GOOS=linux GOARCH=amd64 go build -v go-apns-server.go && popd
+  - pushd tests_mocked_server && CGO_ENABLED=0 go build -v go-apns-server.go && popd
   - sed "s/{{python_version}}/$DOCKER_PYTHON/" Dockerfile.template > Dockerfile
   - docker build -t etataurov/asyncio_apns .
   - pip install python-coveralls
