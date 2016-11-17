@@ -1,5 +1,5 @@
 import sys
-from distutils.core import setup
+from setuptools import setup
 
 install_requires = ["h2>=2.2.0"]
 if sys.version_info < (3, 5):

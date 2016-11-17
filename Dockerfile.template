@@ -1,0 +1,8 @@
+FROM python:{{python_version}}-alpine
+RUN apk add --no-cache git
+RUN pip install --upgrade pip
+RUN pip install --upgrade setuptools
+COPY . app
+WORKDIR app
+RUN pip install -r requirements-test.txt && pip install python-coveralls && pip install flake8
+RUN pip install -e .

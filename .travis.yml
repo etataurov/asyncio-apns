@@ -1,14 +1,26 @@
+sudo: required
+
+services:
+  - docker
+
+env:
+  - DOCKER_PYTHON="3.5"
+
 language: python
-python:
-    - "3.4"
-    - "3.5"
+
+before_install:
+  - eval "$(gimme 1.7)"
+
 install:
-    - "pip install -r requirements-test.txt"
-    - "pip install python-coveralls"
-    - "pip install flake8"
-    - "pip install -e ."
+  - pushd tests_mocked_server && CGO_ENABLED=0 go build -v go-apns-server.go && popd
+  - sed "s/{{python_version}}/$DOCKER_PYTHON/" Dockerfile.template > Dockerfile
+  - docker build -t etataurov/asyncio_apns .
+  - pip install python-coveralls
+  - mkdir -p output
+
 script:
-    - "flake8 asyncio_apns"
-    - "py.test -v --cov=asyncio_apns"
+  - docker run --rm etataurov/asyncio_apns flake8 asyncio_apns
+  - docker run --rm -v $(pwd)/output:/app/output etataurov/asyncio_apns /bin/sh -c "py.test tests tests_mocked_server -v --cov=asyncio_apns && cp .coverage output/"
+
 after_success:
-    - "coveralls"
+  -  docker run --rm -e "TRAVIS_JOB_ID=$TRAVIS_JOB_ID" -e "TRAVIS_BRANCH=$TRAVIS_BRANCH" -v $(pwd)/output:/app/output etataurov/asyncio_apns /bin/sh -c "coveralls -d output/.coverage"
