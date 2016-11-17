@@ -9,9 +9,9 @@ env:
 language: python
 
 before_install:
-  - add-apt-repository ppa:ubuntu-lxc/lxd-stable
-  - apt-get update
-  - apt-get install golang
+  - sudo add-apt-repository ppa:ubuntu-lxc/lxd-stable
+  - sudo apt-get update
+  - sudo apt-get install golang
 
 install:
   - pushd tests_mocked_server && go build go-apns-server.go && popd
