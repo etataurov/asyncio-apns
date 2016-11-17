@@ -9,6 +9,12 @@ env:
 language: python
 
 before_install:
+  - add-apt-repository ppa:ubuntu-lxc/lxd-stable
+  - apt-get update
+  - apt-get install golang
+
+install:
+  - pushd tests_mocked_server && go build go-apns-server.go && popd
   - sed "s/{{python_version}}/$DOCKER_PYTHON/" Dockerfile.template > Dockerfile
   - docker build -t etataurov/asyncio_apns .
   - pip install python-coveralls

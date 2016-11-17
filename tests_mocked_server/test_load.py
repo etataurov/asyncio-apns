@@ -17,6 +17,8 @@ def mock_server(request):
     server.terminate()
 
 
+@pytest.mark.skipif(not os.path.exists(os.path.join(CWD, 'go-apns-server')),
+                    reason="No binary for test server")
 @pytest.mark.asyncio
 def test_batch_send_messages(event_loop, mock_server):
     connection = APNsConnection(os.path.join(CWD, "cert.pem"), os.path.join(CWD, "key.pem"),
