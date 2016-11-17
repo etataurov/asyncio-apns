@@ -5,7 +5,6 @@ services:
 
 env:
   - DOCKER_PYTHON="3.5"
-  - DOCKER_PYTHON="3.6"
 
 language: python
 
@@ -20,4 +19,4 @@ script:
   - docker run --rm -v $(pwd)/output:/app/output etataurov/asyncio_apns /bin/sh -c "py.test tests tests_mocked_server -v --cov=asyncio_apns && cp .coverage output/"
 
 after_success:
-  -  docker run --rm -e "TRAVIS_JOB_ID=$TRAVIS_JOB_ID" -v $(pwd)/output:/app/output etataurov/asyncio_apns /bin/sh -c "coveralls -d output/.coverage"
+  -  docker run --rm -e "TRAVIS_JOB_ID=$TRAVIS_JOB_ID" -e "TRAVIS_BRANCH=$TRAVIS_BRANCH" -v $(pwd)/output:/app/output etataurov/asyncio_apns /bin/sh -c "coveralls -d output/.coverage"

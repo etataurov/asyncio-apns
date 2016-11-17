@@ -5,4 +5,4 @@ RUN pip install --upgrade setuptools
 COPY . app
 WORKDIR app
 RUN pip install -r requirements-test.txt && pip install python-coveralls && pip install flake8
-RUN python setup.py install
+RUN pip install -e .

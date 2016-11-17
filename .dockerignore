@@ -1,2 +1,5 @@
 Dockerfile*
 *.pyc
+build
+asyncio_apns.egg-info
+output
