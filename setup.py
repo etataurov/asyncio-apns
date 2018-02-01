@@ -1,7 +1,7 @@
 import sys
 from setuptools import setup
 
-install_requires = ["h2>=2.2.0"]
+install_requires = ["h2>=2.2.0,<3.0.0"]
 if sys.version_info < (3, 5):
     install_requires.append("typing")
 
