@@ -1,7 +1,7 @@
 import asyncio
 import json
 import enum
-from typing import Union
+from typing import Union, Sequence, Tuple, Optional
 from .errors import APNsError, APNsDisconnectError
 from .h2_client import H2ClientProtocol, HTTP2Error, HTTPMethod, DisconnectError
 from .payload import Payload
@@ -68,7 +68,8 @@ class APNsConnection:
         self.protocol = None
 
     def _prepare_request(self, payload: Union[Payload, str], token: str,
-                         priority: NotificationPriority, topic: str):
+                         priority: NotificationPriority, topic: str,
+                         extra_headers: Optional[Sequence[Tuple[str, str]]]):
         if not isinstance(payload, Payload):
             payload = Payload(payload)
         data = json.dumps(payload.as_dict()).encode()
@@ -82,15 +83,17 @@ class APNsConnection:
         ]
         if topic:
             request_headers.append(('apns-topic', topic))
+        if extra_headers:
+            request_headers.extend(extra_headers)
         return request_headers, data
 
     @asyncio.coroutine
     def send_message(self, payload: Union[Payload, str], token: str,
                      priority: NotificationPriority = NotificationPriority.immediate,
-                     topic: str = None):
+                     topic: str = None, extra_headers: Optional[Sequence[Tuple[str, str]]] = None):
         if not self.connected:
             yield from self.connect()
-        headers, data = self._prepare_request(payload, token, priority, topic)
+        headers, data = self._prepare_request(payload, token, priority, topic, extra_headers)
         try:
             headers, _ = yield from self.protocol.send_request(headers, data)
             return _get_apns_id(headers)
