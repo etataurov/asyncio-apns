@@ -20,6 +20,7 @@ def mock_server(request):
 @pytest.mark.skipif(not os.path.exists(os.path.join(CWD, 'go-apns-server')),
                     reason="No binary for test server")
 @pytest.mark.asyncio
+@asyncio.coroutine
 def test_batch_send_messages(event_loop, mock_server):
     connection = APNsConnection(os.path.join(CWD, "cert.pem"), os.path.join(CWD, "key.pem"),
                                 loop=event_loop, server_addr="127.0.0.1", server_port=8443)
@@ -36,6 +37,6 @@ def test_batch_send_messages(event_loop, mock_server):
 
     tasks = []
     for _ in range(1000):
-        tasks.append(asyncio.async(send_message(), loop=event_loop))
+        tasks.append(asyncio.ensure_future(send_message(), loop=event_loop))
     yield from asyncio.wait(tasks, loop=event_loop)
     connection.disconnect()

@@ -87,7 +87,7 @@ class APNsConnection:
     @asyncio.coroutine
     def send_message(self, payload: Union[Payload, str], token: str,
                      priority: NotificationPriority = NotificationPriority.immediate,
-                     topic: str=None):
+                     topic: str = None):
         if not self.connected:
             yield from self.connect()
         headers, data = self._prepare_request(payload, token, priority, topic)

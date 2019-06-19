@@ -5,7 +5,8 @@ services:
 
 env:
   - DOCKER_PYTHON="3.5"
-  - DOCKER_PYTHON="3.6-rc"
+  - DOCKER_PYTHON="3.6"
+  - DOCKER_PYTHON="3.7"
 
 language: python
 

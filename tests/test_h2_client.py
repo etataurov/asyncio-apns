@@ -55,7 +55,7 @@ def test_future_done(apns_response, event_loop):
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
-    future = asyncio.async(protocol._send_request(1, [], body=None))
+    future = asyncio.ensure_future(protocol._send_request(1, [], body=None))
     conn.receive_data.return_value = apns_response(stream_id=1)
     event_loop.call_soon(functools.partial(protocol.data_received, b'some_data'))
 
@@ -71,7 +71,7 @@ def test_future_exception(apns_response, event_loop):
     protocol.connection_made(transport)
 
     conn.get_next_available_stream_id.return_value = 1
-    future = asyncio.async(protocol._send_request(1, [], body=None))
+    future = asyncio.ensure_future(protocol._send_request(1, [], body=None))
     conn.receive_data.return_value = apns_response(stream_id=1, status=404)
     event_loop.call_soon(functools.partial(protocol.data_received, b'some_data'))
 
@@ -88,7 +88,7 @@ def test_future_exception_on_disconnect(event_loop):
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
-    future = asyncio.async(protocol._send_request(1, [], body=None))
+    future = asyncio.ensure_future(protocol._send_request(1, [], body=None))
     conn.receive_data.return_value = [ConnectionTerminated()]
     event_loop.call_soon(functools.partial(protocol.data_received, b'some_data'))
 
@@ -103,7 +103,7 @@ def test_future_on_connection_lost(event_loop):
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
-    future = asyncio.async(protocol._send_request(1, [], body=None))
+    future = asyncio.ensure_future(protocol._send_request(1, [], body=None))
     event_loop.call_soon(functools.partial(protocol.connection_lost, Exception()))
 
     with pytest.raises(DisconnectError):
@@ -117,8 +117,8 @@ def test_response_order(apns_response, event_loop):
     transport = mock.MagicMock()
     protocol.connection_made(transport)
 
-    future1 = asyncio.async(protocol._send_request(1, [], body=None))
-    future2 = asyncio.async(protocol._send_request(2, [], body=None))
+    future1 = asyncio.ensure_future(protocol._send_request(1, [], body=None))
+    future2 = asyncio.ensure_future(protocol._send_request(2, [], body=None))
     conn.receive_data.return_value = apns_response(stream_id=2)
     event_loop.call_soon(functools.partial(protocol.data_received, b'some_data'))
 
@@ -128,6 +128,7 @@ def test_response_order(apns_response, event_loop):
 
 
 @pytest.mark.asyncio
+@asyncio.coroutine
 def test_too_many_streams_handled(apns_response):
     conn = mock.MagicMock()
     protocol = H2ClientProtocol(conn)
@@ -136,7 +137,7 @@ def test_too_many_streams_handled(apns_response):
 
     conn.send_headers.side_effect = TooManyStreamsError
     conn.get_next_available_stream_id.return_value = 1
-    future = asyncio.async(protocol.send_request([]))
+    future = asyncio.ensure_future(protocol.send_request([]))
     yield from asyncio.sleep(0)
     assert not future.done()
     conn.send_headers.reset_mock()
@@ -151,6 +152,7 @@ def test_too_many_streams_handled(apns_response):
 
 
 @pytest.mark.asyncio
+@asyncio.coroutine
 def test_too_many_streams_on_terminated():
     conn = mock.MagicMock()
     protocol = H2ClientProtocol(conn)
@@ -159,7 +161,7 @@ def test_too_many_streams_on_terminated():
 
     conn.send_headers.side_effect = TooManyStreamsError
     conn.get_next_available_stream_id.return_value = 1
-    future = asyncio.async(protocol.send_request([]))
+    future = asyncio.ensure_future(protocol.send_request([]))
     yield from asyncio.sleep(0)
     protocol.connection_lost(Exception())
     yield from asyncio.sleep(0)
@@ -178,7 +180,7 @@ def test_request_with_body(apns_response, event_loop):
     conn.local_flow_control_window.return_value = sys.maxsize
     conn.max_outbound_frame_size = sys.maxsize
 
-    future = asyncio.async(protocol._send_request(1, [], body=b'foobarbody'))
+    future = asyncio.ensure_future(protocol._send_request(1, [], body=b'foobarbody'))
     conn.receive_data.return_value = apns_response(stream_id=1)
     event_loop.call_soon(
         functools.partial(protocol.data_received, b'some_data'))
@@ -198,7 +200,7 @@ def test_request_with_body_chunks(apns_response, event_loop):
     conn.local_flow_control_window.return_value = sys.maxsize
     conn.max_outbound_frame_size = len(body) // 9
 
-    future = asyncio.async(protocol._send_request(1, [], body=body))
+    future = asyncio.ensure_future(protocol._send_request(1, [], body=body))
     conn.receive_data.return_value = apns_response(stream_id=1)
     event_loop.call_soon(
         functools.partial(protocol.data_received, b'some_data'))
@@ -211,6 +213,7 @@ def test_request_with_body_chunks(apns_response, event_loop):
 
 @pytest.mark.parametrize("opened_for_stream", [True, False])
 @pytest.mark.asyncio
+@asyncio.coroutine
 def test_request_with_body_window_limit(apns_response, event_loop, opened_for_stream):
     conn = mock.MagicMock()
     protocol = H2ClientProtocol(conn)
@@ -222,7 +225,7 @@ def test_request_with_body_window_limit(apns_response, event_loop, opened_for_st
     conn.local_flow_control_window.return_value = len(body) // 2
     conn.max_outbound_frame_size = len(body) // 9
 
-    future = asyncio.async(protocol._send_request(stream_id, [], body=body))
+    future = asyncio.ensure_future(protocol._send_request(stream_id, [], body=body))
     yield from asyncio.sleep(0)
     assert stream_id in protocol.flow_control_futures
     assert not future.done()
