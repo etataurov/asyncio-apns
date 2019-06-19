@@ -3,14 +3,14 @@ from typing import Optional, List, Union
 
 class PayloadAlert:
     def __init__(self,
-                 title: Optional[str]=None,
-                 title_localization_key: Optional[str]=None,
-                 title_localization_args: Optional[List[str]]=None,
-                 body: Optional[str]=None,
-                 body_localization_key: Optional[str]=None,
-                 body_localization_args: Optional[List[str]]=None,
-                 action_localization_key: Optional[str]=None,
-                 launch_image: Optional[str]=None
+                 title: Optional[str] = None,
+                 title_localization_key: Optional[str] = None,
+                 title_localization_args: Optional[List[str]] = None,
+                 body: Optional[str] = None,
+                 body_localization_key: Optional[str] = None,
+                 body_localization_args: Optional[List[str]] = None,
+                 action_localization_key: Optional[str] = None,
+                 launch_image: Optional[str] = None
                  ):
         self.title = title
         self.title_localization_key = title_localization_key
@@ -44,12 +44,12 @@ class PayloadAlert:
 
 class Payload:
     def __init__(self,
-                 alert: Optional[Union[PayloadAlert, str]]=None,
-                 badge: Optional[int]=None,
-                 sound: Optional[str]=None,
-                 content_available: Optional[bool]=None,
-                 category: Optional[str]=None,
-                 custom: Optional[dict]=None):
+                 alert: Optional[Union[PayloadAlert, str]] = None,
+                 badge: Optional[int] = None,
+                 sound: Optional[str] = None,
+                 content_available: Optional[bool] = None,
+                 category: Optional[str] = None,
+                 custom: Optional[dict] = None):
         self.alert = alert
         self.badge = badge
         self.sound = sound
